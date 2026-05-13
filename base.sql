@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS employes (
     prenom TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL, -- Changé en TEXT UNIQUE
     password TEXT NOT NULL,
-    role VARCHAR(255) NOT DEFAULT 'employe',
+    role VARCHAR(255) NOT NULL DEFAULT 'employe',
     date_embauche DATE NOT NULL,
     departement_id INTEGER NOT NULL,
     actif BOOLEAN NOT NULL DEFAULT 1,
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS rh (
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(255) NOT DEFAULT 'rh'
+    role VARCHAR(255) NOT NULL DEFAULT 'rh'
 );
 
 /* Table admin */
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS admin (
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(255) NOT DEFAULT 'admin'
+    role VARCHAR(255) NOT NULL DEFAULT 'admin'
 );
 
 /* Table Validation_rh */
