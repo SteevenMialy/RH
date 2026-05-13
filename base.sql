@@ -22,10 +22,10 @@ CREATE TABLE IF NOT EXISTS employes (
     prenom TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL, -- Changé en TEXT UNIQUE
     password TEXT NOT NULL,
-    role VARCHAR(255) NOT NULL,
+    role VARCHAR(255) NOT DEFAULT 'employe',
     date_embauche DATE NOT NULL,
     departement_id INTEGER NOT NULL,
-    actif BOOLEAN NOT NULL,
+    actif BOOLEAN NOT NULL DEFAULT 1,
     FOREIGN KEY (departement_id) REFERENCES departements (id)
 );
 
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS rh (
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(255) NOT NULL
+    role VARCHAR(255) NOT DEFAULT 'rh'
 );
 
 /* Table admin */
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS admin (
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(255) NOT NULL
+    role VARCHAR(255) NOT DEFAULT 'admin'
 );
 
 /* Table Validation_rh */
@@ -90,3 +90,24 @@ CREATE TABLE IF NOT EXISTS Validation_rh (
 );
 
 PRAGMA foreign_keys = ON;
+
+Insert Into Status(nom)values
+("en attente"),
+("Approuve"),
+("Refuse");
+
+CREATE OR REPLACE View CalculeJourprise AS
+Select 
+    CASE 
+      when e.id not null then SUM(c.date_fin - c.date_debut) 
+      else 0
+    end as jours_prises,
+    c.id as conger_id,
+From conger c
+JOIN employes e on e.id=c.employe_id;
+JOIN Soldes_emp s on s.employe_id=e.id;
+JOIN Validation_rh vh on c.id=vh.conger_id;
+JOIN rh r on r.id=vh.rh_id
+where vh.valeur='Approuve' and c.id_status=2;
+
+
