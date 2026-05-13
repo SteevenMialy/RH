@@ -4,9 +4,9 @@ namespace App\Models;
 
 use CodeIgniter\Model;
 
-class EmployeModel extends Model
+class UtilisateurModel extends Model
 {
-    protected $table = 'employes';
+    protected $table = 'utilisateurs';
     protected $primaryKey = 'id';
     protected $useAutoIncrement = true;
     protected $returnType = 'array';
@@ -26,45 +26,36 @@ class EmployeModel extends Model
     protected $useTimestamps = false;
 
     /**
-     * Authentifier un employé
+     * Authentifier un utilisateur (tous rôles)
      */
     public function authentifier($email, $password)
     {
-        $employe = $this->where('email', $email)
+        $user = $this->where('email', $email)
             ->where('actif', 1)
             ->first();
 
-        if ($employe && password_verify($password, $employe['password'])) {
-            return $employe;
+        if ($user && password_verify($password, $user['password'])) {
+            return $user;
         }
 
         return false;
     }
 
-    /**
-     * Récupérer un employé par email
-     */
     public function getByEmail($email)
     {
         return $this->where('email', $email)->first();
     }
 
-    /**
-     * Vérifier si un email existe
-     */
     public function emailExists($email)
     {
         return $this->where('email', $email)->first() !== null;
     }
 
-    /**
-     * Récupérer le département de l'employé
-     */
-    public function getDepartement($employe_id)
+    public function getDepartement($user_id)
     {
-        return $this->select('employes.*, departements.nom as dept_nom')
-            ->join('departements', 'departements.id = employes.departement_id')
-            ->where('employes.id', $employe_id)
+        return $this->select('utilisateurs.*, departements.nom as dept_nom')
+            ->join('departements', 'departements.id = utilisateurs.departement_id')
+            ->where('utilisateurs.id', $user_id)
             ->first();
     }
 }

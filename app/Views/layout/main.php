@@ -111,6 +111,14 @@
     </style>
 </head>
 <body>
+    <?php
+    // Ensure user display variables exist (fallback to session values)
+    $user_nom = $user_nom ?? ($employe_nom ?? (session()->get('user_prenom') ? trim(session()->get('user_prenom') . ' ' . session()->get('user_nom')) : null));
+    $user_role = $user_role ?? (session()->get('user_role') ?? '');
+    if (empty($user_nom)) {
+        $user_nom = 'Utilisateur';
+    }
+    ?>
     <div class="app-wrap">
         <!-- SIDEBAR -->
         <aside class="sidebar">

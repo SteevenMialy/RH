@@ -89,19 +89,34 @@ if (empty($conges)) {
     $content .= '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:.5rem"></i>Aucune demande de congé</td></tr>';
 } else {
     foreach (array_slice($conges, 0, 3) as $conge) {
+        $jours = 0;
+        if (!empty($conge['date_debut']) && !empty($conge['date_fin'])) {
+            $debut = strtotime($conge['date_debut']);
+            $fin = strtotime($conge['date_fin']);
+            if ($debut !== false && $fin !== false && $fin >= $debut) {
+                $jours = (int) floor(($fin - $debut) / 86400) + 1;
+            }
+        }
         $status_class = match($conge['id_status']) {
             1 => 's-attente',
             2 => 's-approuvee',
             3 => 's-refusee',
             default => 's-annulee'
         };
+        $status_label = $conge['status_nom'] ?: match($conge['id_status']) {
+            1 => 'En attente',
+            2 => 'Approuvée',
+            3 => 'Refusée',
+            4 => 'Annulée',
+            default => 'Inconnu'
+        };
         $content .= '
             <tr>
                 <td><span style="background:var(--mint);color:var(--forest);font-size:.7rem;font-weight:500;padding:4px 9px;border-radius:12px">' . htmlspecialchars($conge['type_nom']) . '</span></td>
                 <td style="color:var(--muted)">' . $conge['date_debut'] . '</td>
                 <td style="color:var(--muted)">' . $conge['date_fin'] . '</td>
-                <td style="font-family:DM Mono,monospace;font-size:.8rem">5 j</td>
-                <td><span class="statut ' . $status_class . '">' . $conge['status_nom'] . '</span></td>
+                <td style="font-family:DM Mono,monospace;font-size:.8rem">' . $jours . ' j</td>
+                <td><span class="statut ' . $status_class . '">' . htmlspecialchars($status_label) . '</span></td>
             </tr>';
     }
 }

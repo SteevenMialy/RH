@@ -48,13 +48,71 @@ class RhController extends BaseController
             'valeur' => $valeur,
             'commentaire' => $commentaire
         ];
-        if ($valeur === 'Approuve') {
-            $conger = $this->congerModel->find($congerId);
-            if ($conger) {
-                $jours_prises = $this->congerModel->jourprise($congerId)[0]['jours_prises'] ?? 0;
-                $this->congerModel->update($congerId, ['jour_prises' => $jours_prises]);
-            }
-            $this->rhModel->insert($data);
+        // Valider l'existence de la demande
+        $conger = $this->congerModel->find($congerId);
+        if (!$conger) {
+            return $this->response->setStatusCode(404)->setBody('Demande introuvable');
         }
+
+        $db = \Config\Database::connect();
+        $congerBuilder = $db->table('conger');
+        $conger = $congerBuilder->select('conger.*, employes.departement_id')->join('employes', 'employes.id = conger.employe_id', 'left')->where('conger.id', $congerId)->get()->getRowArray();
+
+        // Calculer les jours pris à partir des dates de la demande
+        $jours_prises = 0;
+        if ($conger) {
+            $debut = strtotime($conger['date_debut']);
+            $fin = strtotime($conger['date_fin']);
+            if ($debut !== false && $fin !== false && $fin >= $debut) {
+                $jours_prises = (int) floor(($fin - $debut) / 86400) + 1;
+            }
+        }
+
+        // Approuver ou refuser
+        $approved = in_array(strtolower((string) $valeur), ['approuve', 'approuvé', 'approve', '1', 'oui'], true);
+
+        if ($approved) {
+            // Mettre à jour le statut de la demande en approuvée (2)
+            $this->congerModel->update($congerId, ['id_status' => 2]);
+
+            // Déduire du solde de l'employé pour le type concerné
+            if ($conger) {
+                $solde = $db->table('Soldes_emp')
+                    ->where('employe_id', $conger['employe_id'])
+                    ->where('type_conger_id', $conger['type_conger_id'])
+                    ->get()
+                    ->getRowArray();
+
+                if ($solde) {
+                    $nouveauSolde = max(0, (int) $solde['solde'] - $jours_prises);
+                    $nouveauPrises = (int) $solde['jour_prises'] + $jours_prises;
+                    $db->table('Soldes_emp')->where('id', $solde['id'])->update([
+                        'solde' => $nouveauSolde,
+                        'jour_prises' => $nouveauPrises,
+                    ]);
+                }
+            }
+        } else {
+            // Refuser -> statut 3
+            $this->congerModel->update($congerId, ['id_status' => 3]);
+        }
+
+        // Tenter d'insérer un enregistrement de validation si la table existe (Validation_rh)
+        try {
+            $db = \Config\Database::connect();
+            if ($db->tableExists('Validation_rh')) {
+                $db->table('Validation_rh')->insert([
+                    'conger_id' => $congerId,
+                    'rh_id' => $rhId,
+                    'valeur' => $valeur,
+                    'commentaire' => $commentaire,
+                    'date_validation' => date('Y-m-d H:i:s')
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Ne pas bloquer l'utilisateur si la table n'existe pas ou autre erreur
+        }
+
+        return redirect()->back()->with('success', 'Action enregistrée');
     }
 }

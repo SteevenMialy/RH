@@ -21,8 +21,9 @@ class Auth extends BaseController
     public function login()
     {
         // Si l'utilisateur est déjà connecté, rediriger vers le dashboard
-        if ($this->session->get('employe_id')) {
-            return redirect()->to(route_to('employe_dashboard'));
+        if ($this->session->get('is_logged_in')) {
+            $role = $this->session->get('user_role');
+            return $this->redirectByRole($role);
         }
 
         return view('auth/login');
@@ -48,39 +49,72 @@ class Auth extends BaseController
             return redirect()->back()->with('errors', $validation->getErrors());
         }
 
-        // Authentification
+        // Authentification employé
         $employe = $this->employeModel->authentifier($email, $password);
 
-        if ($employe) {
-            // Vérifier que c'est bien un employé
-            if ($employe['role'] !== 'employe') {
-                return redirect()->back()
-                    ->with('error', 'Accès réservé aux employés.')
-                    ->withInput();
-            }
-
-            // Stocker les données en session
+        if ($employe && $employe['role'] === 'employe') {
             $this->session->set([
+                'user_id' => $employe['id'],
+                'user_email' => $employe['email'],
+                'user_nom' => $employe['nom'],
+                'user_prenom' => $employe['prenom'],
+                'user_role' => 'employe',
+                'is_logged_in' => true,
                 'employe_id' => $employe['id'],
                 'employe_email' => $employe['email'],
                 'employe_nom' => $employe['nom'],
                 'employe_prenom' => $employe['prenom'],
                 'employe_departement_id' => $employe['departement_id'],
+            ]);
+
+            $this->session->setFlashdata('success', 'Connexion réussie !');
+            return $this->redirectByRole('employe');
+        }
+
+        // Authentification RH / Admin
+        $db = \Config\Database::connect();
+
+        $rh = $db->table('rh')
+            ->where('email', $email)
+            ->get()
+            ->getRowArray();
+
+        if ($rh && password_verify($password, $rh['password'])) {
+            $this->session->set([
+                'user_id' => $rh['id'],
+                'user_email' => $rh['email'],
+                'user_nom' => $rh['username'],
+                'user_prenom' => '',
+                'user_role' => 'rh',
                 'is_logged_in' => true,
             ]);
 
-            // Message de succès
             $this->session->setFlashdata('success', 'Connexion réussie !');
-
-            // Redirection au dashboard
-            return redirect()->to(route_to('employe_dashboard'));
-
-        } else {
-            // Erreur d'authentification
-            return redirect()->back()
-                ->with('error', 'Identifiants incorrects. Veuillez réessayer.')
-                ->withInput();
+            return $this->redirectByRole('rh');
         }
+
+        $admin = $db->table('admin')
+            ->where('email', $email)
+            ->get()
+            ->getRowArray();
+
+        if ($admin && password_verify($password, $admin['password'])) {
+            $this->session->set([
+                'user_id' => $admin['id'],
+                'user_email' => $admin['email'],
+                'user_nom' => $admin['username'],
+                'user_prenom' => '',
+                'user_role' => 'admin',
+                'is_logged_in' => true,
+            ]);
+
+            $this->session->setFlashdata('success', 'Connexion réussie !');
+            return $this->redirectByRole('admin');
+        }
+
+        return redirect()->back()
+            ->with('error', 'Identifiants incorrects. Veuillez réessayer.')
+            ->withInput();
     }
 
     /**
@@ -91,5 +125,21 @@ class Auth extends BaseController
         $this->session->destroy();
         $this->session->setFlashdata('success', 'Vous avez été déconnecté.');
         return redirect()->to(route_to('auth_login'));
+    }
+
+    /**
+     * Rediriger vers le dashboard selon le role
+     */
+    private function redirectByRole(?string $role)
+    {
+        switch ($role) {
+            case 'admin':
+                return redirect()->to(route_to('admin_dashboard'));
+            case 'rh':
+                return redirect()->to(route_to('rh_dashboard'));
+            case 'employe':
+            default:
+                return redirect()->to(route_to('employe_dashboard'));
+        }
     }
 }

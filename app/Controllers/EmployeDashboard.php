@@ -20,9 +20,11 @@ class EmployeDashboard extends BaseController
      */
     protected function checkAuth()
     {
-        if (!$this->session->get('is_logged_in')) {
+        if (!$this->session->get('is_logged_in') || $this->session->get('user_role') !== 'employe') {
             return redirect()->to(route_to('auth_login'));
         }
+
+        return null;
     }
 
     /**
@@ -30,10 +32,12 @@ class EmployeDashboard extends BaseController
      */
     public function dashboard()
     {
-        $this->checkAuth();
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
 
         $db = \Config\Database::connect();
-        $employe_id = $this->session->get('employe_id');
+        $employe_id = $this->session->get('employe_id') ?? $this->session->get('user_id');
 
         // Récupérer les demandes de congé de l'employé
         $conges = $db->table('conger')
@@ -67,8 +71,10 @@ class EmployeDashboard extends BaseController
             $solde['solde'] = $solde['jours_attribues'] - $jours_prises;
         }
 
+        $full_name = trim($this->session->get('user_prenom') . ' ' . $this->session->get('user_nom'));
+
         $data = [
-            'employe_nom' => $this->session->get('employe_prenom') . ' ' . $this->session->get('employe_nom'),
+            'employe_nom' => $full_name,
             'employe_role' => 'Employé',
             'soldes' => $soldes,
             'conges' => $conges,
@@ -82,15 +88,19 @@ class EmployeDashboard extends BaseController
      */
     public function formCongé()
     {
-        $this->checkAuth();
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
 
         $db = \Config\Database::connect();
         
         // Récupérer les types de congés
         $types_conger = $db->table('TypeConger')->get()->getResultArray();
 
+        $full_name = trim($this->session->get('user_prenom') . ' ' . $this->session->get('user_nom'));
+
         $data = [
-            'employe_nom' => $this->session->get('employe_prenom') . ' ' . $this->session->get('employe_nom'),
+            'employe_nom' => $full_name,
             'employe_role' => 'Employé',
             'types_conger' => $types_conger,
         ];
@@ -103,7 +113,9 @@ class EmployeDashboard extends BaseController
      */
     public function storeConge()
     {
-        $this->checkAuth();
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
 
         $rules = [
             'id_type' => 'required|integer',
@@ -116,7 +128,7 @@ class EmployeDashboard extends BaseController
         }
 
         $db = \Config\Database::connect();
-        $employe_id = $this->session->get('employe_id');
+        $employe_id = $this->session->get('employe_id') ?? $this->session->get('user_id');
         $id_type = $this->request->getPost('id_type');
         $date_debut = $this->request->getPost('date_debut');
         $date_fin = $this->request->getPost('date_fin');
@@ -132,7 +144,9 @@ class EmployeDashboard extends BaseController
             ->whereIn('id_status', [1, 2]) // En attente ou approuvée
             ->where('date_debut <=', $date_fin)
             ->where('date_fin >=', $date_debut)
-            ->first();
+            ->limit(1)
+            ->get()
+            ->getRowArray();
 
         if ($existing) {
             return redirect()->back()->with('error', 'Une demande chevauchante existe déjà');
@@ -155,10 +169,12 @@ class EmployeDashboard extends BaseController
      */
     public function mesCongés()
     {
-        $this->checkAuth();
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
 
         $db = \Config\Database::connect();
-        $employe_id = $this->session->get('employe_id');
+        $employe_id = $this->session->get('employe_id') ?? $this->session->get('user_id');
 
         $conges = $db->table('conger')
             ->select('conger.*, tc.nom as type_nom, s.nom as status_nom')
@@ -169,8 +185,10 @@ class EmployeDashboard extends BaseController
             ->get()
             ->getResultArray();
 
+        $full_name = trim($this->session->get('user_prenom') . ' ' . $this->session->get('user_nom'));
+
         $data = [
-            'employe_nom' => $this->session->get('employe_prenom') . ' ' . $this->session->get('employe_nom'),
+            'employe_nom' => $full_name,
             'employe_role' => 'Employé',
             'conges' => $conges,
         ];
@@ -183,17 +201,21 @@ class EmployeDashboard extends BaseController
      */
     public function cancelConge($id)
     {
-        $this->checkAuth();
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
 
         $db = \Config\Database::connect();
-        $employe_id = $this->session->get('employe_id');
+        $employe_id = $this->session->get('employe_id') ?? $this->session->get('user_id');
 
         // Vérifier que la demande appartient à l'employé
         $conge = $db->table('conger')
             ->where('id', $id)
             ->where('employe_id', $employe_id)
             ->where('id_status', 1) // Seulement les en attente
-            ->first();
+            ->limit(1)
+            ->get()
+            ->getRowArray();
 
         if (!$conge) {
             return redirect()->back()->with('error', 'Demande introuvable ou non modifiable');
@@ -212,7 +234,9 @@ class EmployeDashboard extends BaseController
      */
     public function profil()
     {
-        $this->checkAuth();
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
 
         $db = \Config\Database::connect();
         $employe_id = $this->session->get('employe_id');
@@ -222,15 +246,81 @@ class EmployeDashboard extends BaseController
         // Récupérer le département
         $departement = $db->table('departements')
             ->where('id', $employe['departement_id'])
-            ->first();
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        $full_name = trim($this->session->get('user_prenom') . ' ' . $this->session->get('user_nom'));
 
         $data = [
-            'employe_nom' => $this->session->get('employe_prenom') . ' ' . $this->session->get('employe_nom'),
+            'employe_nom' => $full_name,
             'employe_role' => 'Employé',
             'employe' => $employe,
             'departement' => $departement ? $departement['nom'] : 'Non spécifié',
         ];
 
         return view('employe/profil', $data);
+    }
+
+    /**
+     * Mettre à jour le profil de l'employé connecté
+     */
+    public function updateProfil()
+    {
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
+
+        $employeId = $this->session->get('employe_id') ?? $this->session->get('user_id');
+        $rules = [
+            'nom' => 'required',
+            'prenom' => 'required',
+            'email' => 'required|valid_email',
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $db = \Config\Database::connect();
+        $email = $this->request->getPost('email');
+        $password = trim((string) $this->request->getPost('password'));
+
+        $duplicate = $db->table('employes')
+            ->where('email', $email)
+            ->where('id !=', $employeId)
+            ->limit(1)
+            ->get()
+            ->getRowArray();
+
+        if ($duplicate) {
+            return redirect()->back()->withInput()->with('error', 'Cet email est déjà utilisé par un autre employé');
+        }
+
+        $update = [
+            'nom' => $this->request->getPost('nom'),
+            'prenom' => $this->request->getPost('prenom'),
+            'email' => $email,
+        ];
+
+        if ($password !== '') {
+            if (strlen($password) < 6) {
+                return redirect()->back()->withInput()->with('error', 'Le mot de passe doit contenir au moins 6 caractères');
+            }
+            $update['password'] = password_hash($password, PASSWORD_DEFAULT);
+        }
+
+        $db->table('employes')->where('id', $employeId)->update($update);
+
+        $this->session->set([
+            'user_email' => $email,
+            'user_nom' => $update['nom'],
+            'user_prenom' => $update['prenom'],
+            'employe_email' => $email,
+            'employe_nom' => $update['nom'],
+            'employe_prenom' => $update['prenom'],
+        ]);
+
+        return redirect()->to(route_to('employe_profil'))->with('success', 'Profil mis à jour');
     }
 }

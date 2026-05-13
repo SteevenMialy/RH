@@ -66,6 +66,17 @@ cursor.execute("""
     ('Martin', 'Marie', 'marie.martin@techmada.mg', '$2y$10$PYYaKl2VH/D7Cl80LiI1c.aLdlRh5FVIBnNDu1M6yJhQm9e5Sa6D.', 'employe', '2023-01-10', 3, 1)
 """)
 
+# Insérer des comptes RH et Admin de test
+cursor.execute("""
+    INSERT OR IGNORE INTO rh (username, email, password, role) VALUES
+    ('Responsable RH', 'rh@techmada.mg', '$2y$10$VeKHTYaPsN7Nnvt6V6Gda.E8eJwPyL7xGeDcQtyXXp5wS.57W3fkm', 'rh')
+""")
+
+cursor.execute("""
+    INSERT OR IGNORE INTO admin (username, email, password, role) VALUES
+    ('Administrateur', 'admin@techmada.mg', '$2y$10$vI8aWBYW2h5FcJ3D0DtOU.V9qHcRsEjx3V9dJcwCzIUPLvulQe5rm', 'admin')
+""")
+
 # Insérer les soldes
 cursor.execute("""
     INSERT OR IGNORE INTO Soldes_emp (employe_id, type_conger_id, solde, jours_attribues, jour_prises) VALUES
