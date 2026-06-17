@@ -27,7 +27,6 @@ class Database extends BaseConfig
         'hostname'     => 'localhost',
         'username'     => '',
         'password'     => '',
-        // Use writable directory for the SQLite file so the webserver can write to it
         'database'     => WRITEPATH . 'db' . DIRECTORY_SEPARATOR . 'db.sqlite',
         'DBDriver'     => 'SQLite3',
         'DBPrefix'     => '',

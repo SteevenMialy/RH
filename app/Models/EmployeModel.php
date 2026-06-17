@@ -89,7 +89,7 @@ class EmployeModel extends Model
     {
         $db = \Config\Database::connect();
         return $db->table('conger')
-            ->select('conger.*, TypeConger.nom as type_nom, Status.nom as status_nom')
+            ->select('conger.*, TypeConger.nom as type_nom,Status.id as id_status,Status.nom as status_nom')
             ->join('TypeConger', 'TypeConger.id = conger.type_conger_id')
             ->join('Status', 'Status.id = conger.id_status')
             ->where('conger.employe_id', $employe_id)
@@ -97,4 +97,6 @@ class EmployeModel extends Model
             ->get()
             ->getResultArray();
     }
+
+   
 }

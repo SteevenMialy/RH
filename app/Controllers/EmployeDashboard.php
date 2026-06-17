@@ -93,7 +93,7 @@ class EmployeDashboard extends BaseController
         }
 
         $db = \Config\Database::connect();
-        
+
         // Récupérer les types de congés
         $types_conger = $db->table('TypeConger')->get()->getResultArray();
 
@@ -240,7 +240,7 @@ class EmployeDashboard extends BaseController
 
         $db = \Config\Database::connect();
         $employe_id = $this->session->get('employe_id');
-        
+
         $employe = $this->employeModel->find($employe_id);
 
         // Récupérer le département
@@ -322,5 +322,47 @@ class EmployeDashboard extends BaseController
         ]);
 
         return redirect()->to(route_to('employe_profil'))->with('success', 'Profil mis à jour');
+    }
+
+    public function calendrier()
+    {
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
+
+        $employeId = $this->session->get('employe_id') ?? $this->session->get('user_id');
+        $conger = $this->employeModel->getCongés($employeId);
+            $data = [
+                'employe_nom' => trim($this->session->get('user_prenom') . ' ' . $this->session->get('user_nom')),
+                'employe_role' => 'Employé',
+                'conges' => $conger,
+            ];
+            return view('employe/calendrier', $data);
+    }
+
+    
+    public function historique()
+    {
+        if ($redirect = $this->checkAuth()) {
+            return $redirect;
+        }
+
+        $employeId = $this->session->get('employe_id') ?? $this->session->get('user_id');
+        $conger = $this->employeModel->getCongés($employeId);
+        foreach ($conger as &$conge) {
+            $debut = strtotime($conge['date_debut']);
+            $fin = strtotime($conge['date_fin']);
+            if ($debut && $fin) {
+                $conge['durationHours'] = ((int) floor(($fin - $debut) / 86400) + 1) * 8; // 8 heures par jour
+            } else {
+                $conge['durationHours'] = 0;
+            }
+            $data = [
+                'employe_nom' => trim($this->session->get('user_prenom') . ' ' . $this->session->get('user_nom')),
+                'employe_role' => 'Employé',
+                'conges' => $conger,
+            ];
+            return view('employe/Histo_stat', $data);
+        }
     }
 }

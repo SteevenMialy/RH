@@ -229,6 +229,45 @@ input[type="checkbox"] {
 /* ──────────────────────────────────────────────────────────────────────────── */
 .content { padding: 28px; flex: 1; }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.stat-card h4 {
+  font-size: 13px;
+  color: var(--c-muted);
+  margin-bottom: 8px;
+}
+
+.stat-card p {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--c-primary);
+}
+
+.chart-container {
+  background: var(--c-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+canvas {
+  display: block;
+  margin: 0 auto;
+}
 .page-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 24px;

@@ -23,7 +23,8 @@ $routes->get('/employe/mes-conges', 'EmployeDashboard::mesCongés', ['as' => 'em
 $routes->post('/employe/conge/(:num)/cancel', 'EmployeDashboard::cancelConge/$1', ['as' => 'employe_cancel_conge']);
 $routes->get('/employe/profil', 'EmployeDashboard::profil', ['as' => 'employe_profil']);
 $routes->post('/employe/profil', 'EmployeDashboard::updateProfil', ['as' => 'employe_update_profil']);
-
+$routes->get('/employe/calendrier', 'EmployeDashboard::calendrier', ['as' => 'employe_calendrier']);
+$routes->get('/employe/statistiques', 'EmployeDashboard::historique', ['as' => 'employe_histo_stat']);
 // ──────────────────────────────────────────────────
 // DASHBOARD RH
 // ──────────────────────────────────────────────────

@@ -1,5 +1,3 @@
-/* En SQLite, on ne fait pas CREATE DATABASE. Le fichier est la base. */
-
 /* Table departements */
 CREATE TABLE IF NOT EXISTS departements (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

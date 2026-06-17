@@ -11,6 +11,8 @@ $sidebar_links = '
     <li><a href="' . route_to('employe_form_conge') . '"><i class="bi bi-plus-circle"></i> Nouvelle demande</a></li>
     <li><a href="' . route_to('employe_mes_conges') . '"><i class="bi bi-calendar3"></i> Mes demandes</a></li>
     <li><a href="' . route_to('employe_profil') . '"><i class="bi bi-person"></i> Mon profil</a></li>
+    <li><a href="' . route_to('employe_calendrier') . '"><i class="bi bi-person"></i>Mon Agenda</a></li>
+    <li><a href="' . route_to('employe_histo_stat') . '"><i class="bi bi-graph-up"></i>Statistiques</a></li>
 ';
 
 // Actions topbar
@@ -97,13 +99,13 @@ if (empty($conges)) {
                 $jours = (int) floor(($fin - $debut) / 86400) + 1;
             }
         }
-        $status_class = match($conge['id_status']) {
+        $status_class = match ($conge['id_status']) {
             1 => 's-attente',
             2 => 's-approuvee',
             3 => 's-refusee',
             default => 's-annulee'
         };
-        $status_label = $conge['status_nom'] ?: match($conge['id_status']) {
+        $status_label = $conge['status_nom'] ?: match ($conge['id_status']) {
             1 => 'En attente',
             2 => 'Approuvée',
             3 => 'Refusée',

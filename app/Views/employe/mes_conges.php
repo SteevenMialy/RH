@@ -9,6 +9,8 @@ $sidebar_links = '
     <li><a href="' . route_to('employe_form_conge') . '"><i class="bi bi-plus-circle"></i> Nouvelle demande</a></li>
     <li><a href="' . route_to('employe_mes_conges') . '" class="active"><i class="bi bi-calendar3"></i> Mes demandes</a></li>
     <li><a href="' . route_to('employe_profil') . '"><i class="bi bi-person"></i> Mon profil</a></li>
+        <li><a href="' . route_to('employe_calendrier') . '"><i class="bi bi-person"></i>Mon Agenda</a></li>
+    <li><a href="' . route_to('employe_histo_stat') . '"><i class="bi bi-graph-up"></i>Statistiques</a></li>
 ';
 
 $topbar_actions = '<a href="' . route_to('employe_form_conge') . '" class="btn-forest" style="padding:7px 14px;font-size:.82rem">

@@ -52,6 +52,42 @@ class AdminDashboard extends BaseController
         $stats = $this->getStats();
         $departments = $db->table('departements')->countAllResults();
 
+        // ==========================================
+        // TRAITEMENT DES DONNÉES GRAPHIQUES (NEW)
+        // ==========================================
+        $currentYear = date('Y');
+        
+        // 1. Récupération des congés approuvés par mois (SQLite compatible)
+        $monthQuery = $db->query("
+            SELECT CAST(strftime('%m', date_debut) AS INTEGER) as mois, COUNT(*) as total 
+            FROM conger 
+            WHERE CAST(strftime('%Y', date_debut) AS INTEGER) = ? AND id_status = 2
+            GROUP BY CAST(strftime('%m', date_debut) AS INTEGER)
+        ", [$currentYear])->getResultArray();
+
+        $congesParMois = array_fill(1, 12, 0);
+        foreach ($monthQuery as $row) {
+            $congesParMois[(int)$row['mois']] = (int)$row['total'];
+        }
+
+        // 2. Récupération des congés approuvés par jour de la semaine (SQLite compatible)
+        $dayQuery = $db->query("
+            SELECT CAST(strftime('%w', date_debut) AS INTEGER) as jour_semaine, COUNT(*) as total 
+            FROM conger 
+            WHERE id_status = 2
+            GROUP BY CAST(strftime('%w', date_debut) AS INTEGER)
+        ")->getResultArray();
+
+        $congesParJour = array_fill(0, 7, 0);
+        foreach ($dayQuery as $row) {
+            // strftime('%w'): 0=Dimanche, 1=Lundi, etc.
+            // On veut: 0=Lundi, 1=Mardi, ..., 6=Dimanche
+            $jourSql = (int)$row['jour_semaine'];
+            $jourIndex = ($jourSql + 6) % 7; // Convertir: Dimanche(0) -> 6, Lundi(1) -> 0, etc.
+            $congesParJour[$jourIndex] = (int)$row['total'];
+        }
+        // ==========================================
+
         $data = [
             'user_nom' => trim((string) ($this->session->get('user_prenom') ?? '') . ' ' . (string) ($this->session->get('user_nom') ?? 'Administrateur')),
             'user_role' => 'Admin système',
@@ -61,6 +97,10 @@ class AdminDashboard extends BaseController
             'approved_count' => $stats['approved_requests'],
             'departments_count' => $departments,
             'types_count' => $stats['types_count'],
+            
+            // Injection des données pour Chart.js
+            'donnees_mois'  => array_values($congesParMois),
+            'donnees_jours' => array_values($congesParJour),
         ];
 
         return view('admin/dashboard', $data);
@@ -233,18 +273,14 @@ class AdminDashboard extends BaseController
             'actif' => 1,
         ]);
 
-        // Récupérer l'ID inséré et initialiser les soldes pour chaque type de congé
         $newId = $db->insertID();
 
-        // Récupérer tous les types de congé
         $types = $db->table('TypeConger')->get()->getResultArray();
         foreach ($types as $type) {
-            // Tenter de réutiliser une valeur d'exemple déjà présente dans Soldes_emp
             $sample = $db->table('Soldes_emp')->where('type_conger_id', $type['id'])->limit(1)->get()->getRowArray();
             if ($sample && isset($sample['jours_attribues'])) {
                 $jours = (int) $sample['jours_attribues'];
             } else {
-                // Fallback heuristique selon le nom du type
                 $name = mb_strtolower($type['nom'] ?? '');
                 if (str_contains($name, 'annuel')) {
                     $jours = 30;
@@ -307,13 +343,11 @@ class AdminDashboard extends BaseController
 
         $db = \Config\Database::connect();
 
-        // Vérifier les demandes liées
         $used = $db->table('conger')->where('employe_id', $id)->limit(1)->get()->getRowArray();
         if ($used) {
             return redirect()->back()->with('error', 'Impossible de supprimer: des demandes de congé existent pour cet employé');
         }
 
-        // Supprimer les soldes puis l'employé
         $db->table('Soldes_emp')->where('employe_id', $id)->delete();
         $db->table('employes')->where('id', $id)->delete();
 

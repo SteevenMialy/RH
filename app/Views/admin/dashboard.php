@@ -1,46 +1,41 @@
-<?php
-$pendingCount = (int) ($pending_count ?? 0);
-$employeesActive = (int) ($employees_active ?? 0);
-$approvedCount = (int) ($approved_count ?? 0);
-$departmentsCount = (int) ($departments_count ?? 0);
+<?= $this->extend('admin/layout') ?> <!-- Ou le nom de votre fichier layout -->
 
-echo view('layout/main', [
-    'user_nom' => $user_nom,
-    'user_role' => $user_role ?? 'Admin',
-    'page_title' => 'Dashboard administrateur',
-    'breadcrumb' => 'Administration',
-    'sidebar_subtitle' => 'Administration',
-    'sidebar_links' => '
-        <li><a href="' . route_to('admin_dashboard') . '" class="active"><i class="bi bi-speedometer2"></i> Vue d\'ensemble</a></li>
-        <li><a href="' . route_to('admin_demandes') . '"><i class="bi bi-inbox"></i> Toutes les demandes <span class="nav-badge alert">' . $pendingCount . '</span></a></li>
-        <li><a href="' . route_to('admin_employes') . '"><i class="bi bi-people"></i> Employés</a></li>
-        <li><a href="' . route_to('admin_departements') . '"><i class="bi bi-building"></i> Départements</a></li>
-        <li><a href="' . route_to('admin_types_conge') . '"><i class="bi bi-tags"></i> Types de congé</a></li>
-    ',
-    'topbar_actions' => '<a href="' . route_to('admin_employes') . '" class="btn-forest" style="padding:7px 14px;font-size:.82rem"><i class="bi bi-person-plus"></i> Ajouter employé</a>',
-    'content' => '
-        <div class="metrics">
-            <div class="metric">
-                <div class="metric-top"><div class="metric-icon mi-forest"><i class="bi bi-people"></i></div></div>
-                <div class="metric-val">' . $employeesActive . '</div>
-                <div class="metric-label">Employés actifs</div>
-            </div>
-            <div class="metric">
-                <div class="metric-top"><div class="metric-icon mi-amber"><i class="bi bi-hourglass-split"></i></div></div>
-                <div class="metric-val">' . $pendingCount . '</div>
-                <div class="metric-label">Demandes en attente</div>
-            </div>
-            <div class="metric">
-                <div class="metric-top"><div class="metric-icon mi-green"><i class="bi bi-calendar-check"></i></div></div>
-                <div class="metric-val">' . $approvedCount . '</div>
-                <div class="metric-label">Demandes approuvées</div>
-            </div>
-            <div class="metric">
-                <div class="metric-top"><div class="metric-icon mi-blue"><i class="bi bi-building"></i></div></div>
-                <div class="metric-val">' . $departmentsCount . '</div>
-                <div class="metric-label">Départements</div>
-            </div>
-        </div>
-        <div style="text-align: center; padding: 2rem;"><i class="bi bi-shield-check" style="font-size: 3rem; color: var(--muted); opacity: 0.3;"></i><p style="color: var(--muted); margin-top: 1rem;">Dashboard Admin — données réelles</p></div>
-    ',
-]);
+<?= $this->section('content') ?> <!-- Vérifiez ce nom de section dans votre fichier layout -->
+
+    <!-- VOS STATS EXISTANTES -->
+    <div class="stats-grid">
+        <div class="stat-card"><h4>Employés</h4><p><?= $employees_active ?></p></div>
+        <div class="stat-card"><h4>En Attente</h4><p><?= $pending_count ?></p></div>
+        <div class="stat-card"><h4>Approuvés</h4><p><?= $approved_count ?></p></div>
+    </div>
+
+    <!-- VOS GRAPHIQUES -->
+    <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+        <canvas id="chartMois"></canvas>
+        <canvas id="chartJours"></canvas>
+    </div>
+
+    <!-- LE SCRIPT (Graphiques hors ligne simples) -->
+    <script src="<?= base_url('assets/js/simple-charts.js') ?>"></script>
+    <script>
+        const donneesMois = <?= json_encode($donnees_mois) ?>;
+        const donneesJours = <?= json_encode($donnees_jours) ?>;
+
+        // Graphique des congés par mois
+        drawBarChart(
+            document.getElementById('chartMois'),
+            donneesMois,
+            ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Déc'],
+            'Congés par mois'
+        );
+
+        // Graphique des congés par jour de la semaine
+        drawLineChart(
+            document.getElementById('chartJours'),
+            donneesJours,
+            ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+            'Congés par jour de la semaine'
+        );
+    </script>
+
+<?= $this->endSection() ?>
